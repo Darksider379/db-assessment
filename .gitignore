@@ -14,5 +14,6 @@ dist/
 *.png
 !diagrams/trade_store_classes.png
 README.md
+.claude/
 .DS_Store
 .env
