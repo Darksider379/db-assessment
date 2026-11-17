@@ -18,8 +18,6 @@ def save_trade(db: Session, trade_in: TradeIn) -> Trade:
             f"Maturity date {trade_in.maturity_date} is earlier than today ({today})"
         )
 
-    # SQLite has no SELECT FOR UPDATE. Reserve its writer lock before reading
-    # the latest version so competing requests cannot validate stale state.
     if db.get_bind().dialect.name == "sqlite":
         connection = db.connection()
         if not connection.connection.driver_connection.in_transaction:

@@ -26,7 +26,6 @@ def test_version_check_waits_for_pending_writer(tmp_path, make_trade, trade_in):
                 checking.set()
 
         def after_execute(conn, cursor, statement, parameters, context, executemany):
-            # Also detects the old implementation reading before reserving a lock.
             if "max(trades.version)" in statement:
                 checking.set()
 
