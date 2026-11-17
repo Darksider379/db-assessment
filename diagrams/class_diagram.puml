@@ -1,0 +1,74 @@
+@startuml trade_store_classes
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+hide empty members
+
+package "app.db" {
+  class Trade << (E,#ADD1B2) ORM >> {
+    + trade_id : str  <<PK>>
+    + version : int   <<PK>>
+    + counter_party_id : str
+    + portfolio_id : str
+    + maturity_date : date
+    + created_date : date
+    + expired : str  // 'Y' | 'N'
+  }
+  class Base
+  Base <|-- Trade
+}
+
+package "app.schemas" {
+  class TradeIn << (P,#F5C6C6) Pydantic >> {
+    + trade_id : str
+    + version : int
+    + counter_party_id : str
+    + portfolio_id : str
+    + maturity_date : date
+  }
+  class TradeOut << (P,#F5C6C6) Pydantic >> {
+    + created_date : date
+    + expired : str
+  }
+  TradeIn <|-- TradeOut
+}
+
+package "app.service" {
+  class TradeValidationError <<Exception>>
+  class "save_trade(db, trade_in)" as SaveTrade <<function>>
+  class "expire_matured_trades(db)" as ExpireFn <<function>>
+
+  SaveTrade ..> TradeValidationError : raises (version or maturity)
+  SaveTrade ..> Trade : reads/writes
+  SaveTrade ..> TradeIn : consumes
+  ExpireFn  ..> Trade : updates
+}
+
+package "app.routes" {
+  class "TradeRouter" as Router {
+    + POST /trades
+    + GET  /trades
+    + GET  /trades/{trade_id}
+    + GET  /trades/{trade_id}/{version}
+    + GET  /health
+  }
+  Router ..> SaveTrade : POST
+  Router ..> Trade : reads
+  Router ..> TradeIn : validates
+  Router ..> TradeOut : serialises
+}
+
+package "app.main" {
+  class FastAPIApp as "FastAPI app" {
+    + lifespan()
+    + exception handlers
+  }
+  class BackgroundScheduler {
+    + interval job
+  }
+  FastAPIApp o-- BackgroundScheduler
+  FastAPIApp ..> Router : includes
+  FastAPIApp ..> TradeValidationError : handles -> 400
+  BackgroundScheduler ..> ExpireFn : schedules
+}
+
+@enduml
