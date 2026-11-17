@@ -29,3 +29,17 @@ def test_same_version_replaces_preserving_created_date(db, trade_in):
     assert updated.counter_party_id == "CP-9"
     assert updated.created_date == original_created
     assert db.query(Trade).filter_by(trade_id="T1").count() == 1
+
+
+@freeze_time("2026-11-17")
+def test_renewing_expired_trade_clears_expiry(db, make_trade, trade_in):
+    from datetime import date
+
+    db.add(make_trade(maturity_date=date(2026, 1, 1), expired="Y"))
+    db.commit()
+
+    updated = save_trade(db, trade_in())
+
+    assert updated.expired == "N"
+    assert updated.maturity_date == trade_in().maturity_date
+    assert updated.created_date == date(2026, 1, 1)
