@@ -11,5 +11,7 @@ build/
 dist/
 .ruff_cache/
 *.db
+*.png
+README.md
 .DS_Store
 .env
